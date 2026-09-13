@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "**" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build GlobalLifeBD APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.4'
+
+      - name: Build Android APK
+        run: |
+          gradle assembleRelease --stacktrace || gradle assembleDebug --stacktrace
+
+      - name: Prepare APK for Download
+        run: |
+          mkdir -p final-apk
+          find app/build/outputs/apk/ -name "*.apk" -exec cp {} final-apk/GlobalLifeBD-App.apk \;
+          echo "APK build complete. File details:"
+          ls -lh final-apk/
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GlobalLifeBD-Android-App-APK
+          path: final-apk/GlobalLifeBD-App.apk
+          retention-days: 30
+

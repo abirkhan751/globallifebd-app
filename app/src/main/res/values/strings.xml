@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">GLOBAL LIFE BD</string>
+    <string name="web_url">https://globallifebd.com</string>
+    <string name="press_back_again">অ্যাপ থেকে বের হতে আরেকবার ব্যাক বাটন চাপুন</string>
+    <string name="offline_title">ইন্টারনেট সংযোগ বিচ্ছিন্ন</string>
+    <string name="offline_desc">দয়া করে আপনার ইন্টারনেট কানেকশন চেক করুন এবং পুনরায় চেষ্টা করুন।</string>
+    <string name="retry">পুনরায় চেষ্টা করুন</string>
+    <string name="loading">লোড হচ্ছে...</string>
+</resources>
+
