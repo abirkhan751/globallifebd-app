@@ -5,6 +5,9 @@ on:
     branches: [ "**" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build GlobalLifeBD APK
@@ -46,3 +49,15 @@ jobs:
           path: final-apk/GlobalLifeBD-App.apk
           retention-days: 30
 
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: latest
+          name: "Global Life BD App (Latest)"
+          body: "Official Android Application for Global Life BD with OneSignal Push Notifications."
+          draft: false
+          prerelease: false
+          files: final-apk/GlobalLifeBD-App.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
