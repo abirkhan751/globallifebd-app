@@ -6,6 +6,5 @@
     <string name="offline_desc">দয়া করে আপনার ইন্টারনেট কানেকশন চেক করুন এবং পুনরায় চেষ্টা করুন।</string>
     <string name="retry">পুনরায় চেষ্টা করুন</string>
     <string name="loading">লোড হচ্ছে...</string>
-    <string name="onesignal_app_id">ebdfa1ac-12ea-4e71-9a62-e42860c2ffff</string>
 </resources>
 

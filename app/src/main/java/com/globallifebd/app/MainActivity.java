@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int FILE_CHOOSER_RESULT_CODE = 1001;
     private static final int PERMISSION_REQUEST_CODE = 1002;
     private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1003;
-    public static final String NOTIFICATION_CHANNEL_ID = "channel_globallifebd_push";
+    public static final String NOTIFICATION_CHANNEL_ID = AppFirebaseMessagingService.CHANNEL_ID;
 
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -84,6 +84,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         targetUrl = getString(R.string.web_url);
+
+        // Check if opened from a notification deep link
+        if (getIntent() != null && getIntent().hasExtra("target_url")) {
+            String deepLink = getIntent().getStringExtra("target_url");
+            if (deepLink != null && !deepLink.isEmpty()) {
+                targetUrl = deepLink;
+            }
+        }
 
         webView = findViewById(R.id.webView);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
@@ -110,6 +118,18 @@ public class MainActivity extends AppCompatActivity {
             loadTargetPage();
         } else {
             webView.restoreState(savedInstanceState);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && intent.hasExtra("target_url")) {
+            String deepLink = intent.getStringExtra("target_url");
+            if (deepLink != null && !deepLink.isEmpty() && webView != null) {
+                webView.loadUrl(deepLink);
+            }
         }
     }
 
@@ -203,6 +223,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Native Notification Bridge
         webView.addJavascriptInterface(new WebAppInterface(this), "AndroidNotification");
+        webView.addJavascriptInterface(new FcmBridgeInterface(this), "AndroidFCM");
 
         // File download support
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
@@ -268,6 +289,29 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public class FcmBridgeInterface {
+        Context mContext;
+
+        FcmBridgeInterface(Context c) {
+            mContext = c;
+        }
+
+        @JavascriptInterface
+        public String getToken() {
+            android.content.SharedPreferences prefs = mContext.getSharedPreferences(AppFirebaseMessagingService.PREF_NAME, MODE_PRIVATE);
+            return prefs.getString(AppFirebaseMessagingService.KEY_FCM_TOKEN, "");
+        }
+
+        @JavascriptInterface
+        public void syncToken() {
+            android.content.SharedPreferences prefs = mContext.getSharedPreferences(AppFirebaseMessagingService.PREF_NAME, MODE_PRIVATE);
+            String token = prefs.getString(AppFirebaseMessagingService.KEY_FCM_TOKEN, "");
+            if (!token.isEmpty()) {
+                AppFirebaseMessagingService.syncTokenToServer(mContext, token);
+            }
+        }
+    }
+
     private class CustomWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -311,6 +355,15 @@ public class MainActivity extends AppCompatActivity {
             topProgressBar.setVisibility(View.GONE);
             swipeRefreshLayout.setRefreshing(false);
             super.onPageFinished(view, url);
+
+            // Sync FCM Token with session cookies when page finishes loading
+            try {
+                android.content.SharedPreferences prefs = getSharedPreferences(AppFirebaseMessagingService.PREF_NAME, MODE_PRIVATE);
+                String token = prefs.getString(AppFirebaseMessagingService.KEY_FCM_TOKEN, null);
+                if (token != null && !token.isEmpty()) {
+                    AppFirebaseMessagingService.syncTokenToServer(MainActivity.this, token);
+                }
+            } catch (Exception ignored) {}
         }
 
         @Override

@@ -55,7 +55,7 @@ jobs:
         with:
           tag_name: latest
           name: "Global Life BD App (Latest)"
-          body: "Official Android Application for Global Life BD with OneSignal Push Notifications."
+          body: "Official Android Application for Global Life BD with direct Firebase Cloud Messaging (FCM) Push Notifications."
           draft: false
           prerelease: false
           files: final-apk/GlobalLifeBD-App.apk

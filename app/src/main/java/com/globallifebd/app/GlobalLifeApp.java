@@ -1,26 +1,47 @@
 package com.globallifebd.app;
 
 import android.app.Application;
-import com.onesignal.OneSignal;
-import com.onesignal.debug.LogLevel;
-import com.onesignal.Continue;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.util.Log;
+
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class GlobalLifeApp extends Application {
+
+    private static final String TAG = "GlobalLifeApp";
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // Enable verbose OneSignal logging to help debug
-        OneSignal.getDebug().setLogLevel(LogLevel.VERBOSE);
+        // Initialize Firebase
+        try {
+            FirebaseApp.initializeApp(this);
+        } catch (Exception e) {
+            Log.e(TAG, "FirebaseApp initialization error: " + e.getMessage());
+        }
 
-        // OneSignal Initialization with App ID
-        String appId = getString(R.string.onesignal_app_id);
-        OneSignal.initWithContext(this, appId);
+        // Create notification channel
+        AppFirebaseMessagingService.createNotificationChannel(this);
 
-        // Request native notification permission prompt
-        OneSignal.getNotifications().requestPermission(true, Continue.with(r -> {
-            // Handled
-        }));
+        // Fetch FCM token and sync
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (!task.isSuccessful()) {
+                Log.w(TAG, "Fetching FCM registration token failed", task.getException());
+                return;
+            }
+
+            // Get new FCM registration token
+            String token = task.getResult();
+            Log.d(TAG, "Current FCM Token: " + token);
+
+            SharedPreferences prefs = getSharedPreferences(AppFirebaseMessagingService.PREF_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString(AppFirebaseMessagingService.KEY_FCM_TOKEN, token).apply();
+
+            // Sync with backend
+            AppFirebaseMessagingService.syncTokenToServer(this, token);
+        });
     }
 }
