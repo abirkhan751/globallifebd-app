@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:background="@color/colorWhite">
 
+    <!-- Center Section: Logo + Name + Version -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -13,11 +14,43 @@
 
         <ImageView
             android:id="@+id/imgSplashLogo"
-            android:layout_width="160dp"
-            android:layout_height="160dp"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
+            android:adjustViewBounds="true"
             android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_logo" />
 
+        <TextView
+            android:id="@+id/txtSplashTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/app_name"
+            android:textColor="#5A6A85"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/txtSplashVersion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="ভার্সনঃ ১.০.০"
+            android:textColor="#94A3B8"
+            android:textSize="13sp" />
+
     </LinearLayout>
+
+    <!-- Bottom Loading Bar -->
+    <ProgressBar
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="48dp"
+        android:indeterminate="true"
+        android:indeterminateTint="@color/colorPrimary" />
 
 </RelativeLayout>
