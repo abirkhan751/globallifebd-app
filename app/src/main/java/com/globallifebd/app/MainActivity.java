@@ -3,6 +3,9 @@ package com.globallifebd.app;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.DownloadManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -17,11 +20,16 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
+import android.webkit.ServiceWorkerClient;
+import android.webkit.ServiceWorkerController;
 import android.webkit.URLUtil;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -34,6 +42,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -48,6 +58,8 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int FILE_CHOOSER_RESULT_CODE = 1001;
     private static final int PERMISSION_REQUEST_CODE = 1002;
+    private static final int NOTIFICATION_PERMISSION_REQUEST_CODE = 1003;
+    public static final String NOTIFICATION_CHANNEL_ID = "channel_globallifebd_push";
 
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
@@ -79,6 +91,7 @@ public class MainActivity extends AppCompatActivity {
         offlineLayout = findViewById(R.id.offlineLayout);
         btnRetry = findViewById(R.id.btnRetry);
 
+        createNotificationChannel();
         initSwipeRefresh();
         initWebView();
         checkPermissions();
@@ -97,6 +110,23 @@ public class MainActivity extends AppCompatActivity {
             loadTargetPage();
         } else {
             webView.restoreState(savedInstanceState);
+        }
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Global Life BD নোটিফিকেশন";
+            String description = "গুরুত্বপূর্ণ নোটিশ, অফার ও ইনকাম আপডেট";
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+            channel.enableVibration(true);
+            channel.setShowBadge(true);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
         }
     }
 
@@ -123,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Disable pull-to-refresh when webview is scrolled down
         webView.getViewTreeObserver().addOnScrollChangedListener(() -> {
             if (webView.getScrollY() == 0) {
                 swipeRefreshLayout.setEnabled(true);
@@ -148,7 +177,6 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        // Append custom user agent
         String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0";
         settings.setUserAgentString(customUserAgent);
 
@@ -158,10 +186,25 @@ public class MainActivity extends AppCompatActivity {
         }
         CookieManager.getInstance().setAcceptCookie(true);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                ServiceWorkerController swController = ServiceWorkerController.getInstance();
+                swController.setServiceWorkerClient(new ServiceWorkerClient() {
+                    @Override
+                    public WebResourceResponse shouldInterceptRequest(WebResourceRequest request) {
+                        return super.shouldInterceptRequest(request);
+                    }
+                });
+            } catch (Exception ignored) {}
+        }
+
         webView.setWebViewClient(new CustomWebViewClient());
         webView.setWebChromeClient(new CustomWebChromeClient());
 
-        // File download support (receipts, pdfs, etc.)
+        // Native Notification Bridge
+        webView.addJavascriptInterface(new WebAppInterface(this), "AndroidNotification");
+
+        // File download support
         webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
             try {
                 DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
@@ -192,6 +235,39 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    public class WebAppInterface {
+        Context mContext;
+
+        WebAppInterface(Context c) {
+            mContext = c;
+        }
+
+        @JavascriptInterface
+        public void showNotification(String title, String message, String url) {
+            try {
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(mContext, NOTIFICATION_CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.ic_launcher)
+                        .setContentTitle(title)
+                        .setContentText(message)
+                        .setPriority(NotificationCompat.PRIORITY_HIGH)
+                        .setAutoCancel(true);
+
+                Intent intent = new Intent(mContext, MainActivity.class);
+                if (url != null && !url.isEmpty()) {
+                    intent.putExtra("target_url", url);
+                }
+                PendingIntent pendingIntent = PendingIntent.getActivity(mContext, (int) System.currentTimeMillis(), intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0));
+                builder.setContentIntent(pendingIntent);
+
+                NotificationManagerCompat notificationManager = NotificationManagerCompat.from(mContext);
+                if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                    notificationManager.notify((int) System.currentTimeMillis(), builder.build());
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
     private class CustomWebViewClient extends WebViewClient {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -207,7 +283,6 @@ public class MainActivity extends AppCompatActivity {
         private boolean handleUrlNavigation(String url) {
             if (url == null) return false;
 
-            // Handle WhatsApp, Telegram, Phone, Email, External Apps
             if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:")
                     || url.startsWith("whatsapp:") || url.contains("wa.me")
                     || url.startsWith("tg:") || url.contains("t.me")
@@ -222,7 +297,6 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            // Normal site link -> stay in WebView
             return false;
         }
 
@@ -263,7 +337,13 @@ public class MainActivity extends AppCompatActivity {
             super.onProgressChanged(view, newProgress);
         }
 
-        // File upload handling for camera and file picker
+        @Override
+        public void onPermissionRequest(final PermissionRequest request) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                request.grant(request.getResources());
+            }
+        }
+
         @Override
         public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
             if (uploadMessage != null) {
@@ -383,6 +463,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkPermissions() {
+        // Notification permission for Android 13+ (API 33+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
+            }
+        }
+
+        // Camera and Storage permissions
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             String[] permissions = new String[]{
                     Manifest.permission.CAMERA,
@@ -412,4 +500,3 @@ public class MainActivity extends AppCompatActivity {
         webView.saveState(outState);
     }
 }
-
