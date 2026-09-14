@@ -50,15 +50,17 @@ jobs:
           path: final-apk/
           retention-days: 30
 
-      - name: Create or Update GitHub Release v1.0.6
+      - name: Create or Update GitHub Release v1.0.7
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.6
-          name: "GLOBAL LIFE BD v1.0.6"
+          tag_name: v1.0.7
+          name: "GLOBAL LIFE BD v1.0.7"
           body: |
-            ### GLOBAL LIFE BD v1.0.6 Official Release
-            - App Version: 1.0.6 (versionCode 7)
+            ### GLOBAL LIFE BD v1.0.7 Official Release
+            - App Version: 1.0.7 (versionCode 8)
+            - Notification, Camera & Storage unified permission prompts on launch
+            - Instant token re-sync upon notification permission approval
             - WebP high-performance image compression and caching
             - Fixed sidebar touch and scroll: SwipeRefreshLayout disabled inside sidebar
             - Official Firebase Integration (google-services.json)
@@ -79,7 +81,7 @@ jobs:
         with:
           tag_name: latest
           name: "GLOBAL LIFE BD (Latest)"
-          body: "Official Android Application for GLOBAL LIFE BD v1.0.6."
+          body: "Official Android Application for GLOBAL LIFE BD v1.0.7."
           draft: false
           prerelease: false
           files: |
