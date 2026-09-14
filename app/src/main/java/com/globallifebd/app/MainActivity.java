@@ -35,7 +35,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -63,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private ProgressBar topProgressBar;
     private LinearLayout offlineLayout;
     private Button btnRetry;
 
@@ -95,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webView);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        topProgressBar = findViewById(R.id.topProgressBar);
         offlineLayout = findViewById(R.id.offlineLayout);
         btnRetry = findViewById(R.id.btnRetry);
 
@@ -197,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0";
+        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.1";
         settings.setUserAgentString(customUserAgent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -346,13 +343,11 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            topProgressBar.setVisibility(View.VISIBLE);
             super.onPageStarted(view, url, favicon);
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
-            topProgressBar.setVisibility(View.GONE);
             swipeRefreshLayout.setRefreshing(false);
             super.onPageFinished(view, url);
 
@@ -369,7 +364,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             if (request.isForMainFrame()) {
-                topProgressBar.setVisibility(View.GONE);
                 swipeRefreshLayout.setRefreshing(false);
                 if (!isNetworkConnected()) {
                     offlineLayout.setVisibility(View.VISIBLE);
@@ -383,10 +377,6 @@ public class MainActivity extends AppCompatActivity {
     private class CustomWebChromeClient extends WebChromeClient {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
-            topProgressBar.setProgress(newProgress);
-            if (newProgress >= 100) {
-                topProgressBar.setVisibility(View.GONE);
-            }
             super.onProgressChanged(view, newProgress);
         }
 

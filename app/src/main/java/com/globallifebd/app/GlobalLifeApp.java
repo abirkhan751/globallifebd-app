@@ -40,8 +40,15 @@ public class GlobalLifeApp extends Application {
             SharedPreferences prefs = getSharedPreferences(AppFirebaseMessagingService.PREF_NAME, Context.MODE_PRIVATE);
             prefs.edit().putString(AppFirebaseMessagingService.KEY_FCM_TOKEN, token).apply();
 
-            // Sync with backend
+            // Sync with backend immediately on app launch (supports guest installs)
             AppFirebaseMessagingService.syncTokenToServer(this, token);
         });
+
+        // Subscribe to global broadcast topics
+        try {
+            FirebaseMessaging.getInstance().subscribeToTopic("all_devices");
+        } catch (Exception e) {
+            Log.e(TAG, "Topic subscription error: " + e.getMessage());
+        }
     }
 }
