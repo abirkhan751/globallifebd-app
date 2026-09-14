@@ -2,12 +2,12 @@
   "project_info": {
     "project_number": "47096712990",
     "project_id": "global-life-bd",
-    "storage_bucket": "global-life-bd.appspot.com"
+    "storage_bucket": "global-life-bd.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:47096712990:android:c4b8fa63219463584820dc",
+        "mobilesdk_app_id": "1:47096712990:android:6af29159eac59c5777c30f",
         "android_client_info": {
           "package_name": "com.globallifebd.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyD-dummyKeyForBuild-GLP-FCM-2026"
+          "current_key": "AIzaSyAL0PL3ZZGArri6pU_M0YA8dbZAupay9-I"
         }
       ],
       "services": {
@@ -27,4 +27,3 @@
   ],
   "configuration_version": "1"
 }
-
