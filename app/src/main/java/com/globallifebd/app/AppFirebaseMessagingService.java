@@ -107,7 +107,7 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
             pendingIntentFlags |= PendingIntent.FLAG_IMMUTABLE;
         }
 
-        int notificationId = (int) System.currentTimeMillis();
+        int notificationId = (title + ":" + body).hashCode();
         PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId, intent, pendingIntentFlags);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
