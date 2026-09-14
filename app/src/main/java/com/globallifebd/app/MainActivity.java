@@ -505,45 +505,73 @@ public class MainActivity extends AppCompatActivity {
             }
             uploadMessage = filePathCallback;
 
-            Intent takePictureIntent = null;
-            try {
-                File photoFile = createImageFile();
-                if (photoFile != null) {
-                    cameraPhotoPath = "file:" + photoFile.getAbsolutePath();
-                    takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                    Uri photoURI = FileProvider.getUriForFile(MainActivity.this,
-                            getApplicationContext().getPackageName() + ".fileprovider", photoFile);
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            // Media & Camera permission only asked on-demand when uploading a picture
+            List<String> neededPerms = new ArrayList<>();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    neededPerms.add(Manifest.permission.CAMERA);
                 }
-            } catch (Exception e) {
-                takePictureIntent = null;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+                        neededPerms.add(Manifest.permission.READ_MEDIA_IMAGES);
+                    }
+                } else {
+                    if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                        neededPerms.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+                    }
+                }
             }
 
-            Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
-            contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
-            contentSelectionIntent.setType("*/*");
-            contentSelectionIntent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "application/pdf"});
-
-            Intent[] intentArray;
-            if (takePictureIntent != null) {
-                intentArray = new Intent[]{takePictureIntent};
-            } else {
-                intentArray = new Intent[0];
-            }
-
-            Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
-            chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
-            chooserIntent.putExtra(Intent.EXTRA_TITLE, "ছবি বা ফাইল নির্বাচন করুন");
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
-
-            try {
-                startActivityForResult(chooserIntent, FILE_CHOOSER_RESULT_CODE);
+            if (!neededPerms.isEmpty()) {
+                ActivityCompat.requestPermissions(MainActivity.this, neededPerms.toArray(new String[0]), PERMISSION_REQUEST_CODE);
                 return true;
-            } catch (ActivityNotFoundException e) {
-                uploadMessage = null;
-                Toast.makeText(MainActivity.this, "ফাইল সিলেক্টর ওপেন করা যায়নি", Toast.LENGTH_SHORT).show();
-                return false;
             }
+
+            openFileChooser();
+            return true;
+        }
+    }
+
+    private void openFileChooser() {
+        Intent takePictureIntent = null;
+        try {
+            File photoFile = createImageFile();
+            if (photoFile != null) {
+                cameraPhotoPath = "file:" + photoFile.getAbsolutePath();
+                takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                Uri photoURI = FileProvider.getUriForFile(MainActivity.this,
+                        getApplicationContext().getPackageName() + ".fileprovider", photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            }
+        } catch (Exception e) {
+            takePictureIntent = null;
+        }
+
+        Intent contentSelectionIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        contentSelectionIntent.addCategory(Intent.CATEGORY_OPENABLE);
+        contentSelectionIntent.setType("*/*");
+        contentSelectionIntent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "application/pdf"});
+
+        Intent[] intentArray;
+        if (takePictureIntent != null) {
+            intentArray = new Intent[]{takePictureIntent};
+        } else {
+            intentArray = new Intent[0];
+        }
+
+        Intent chooserIntent = new Intent(Intent.ACTION_CHOOSER);
+        chooserIntent.putExtra(Intent.EXTRA_INTENT, contentSelectionIntent);
+        chooserIntent.putExtra(Intent.EXTRA_TITLE, "ছবি বা ফাইল নির্বাচন করুন");
+        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intentArray);
+
+        try {
+            startActivityForResult(chooserIntent, FILE_CHOOSER_RESULT_CODE);
+        } catch (ActivityNotFoundException e) {
+            if (uploadMessage != null) {
+                uploadMessage.onReceiveValue(null);
+                uploadMessage = null;
+            }
+            Toast.makeText(MainActivity.this, "ফাইল সিলেক্টর ওপেন করা যায়নি", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -616,42 +644,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkPermissions() {
-        List<String> permissionsNeeded = new ArrayList<>();
-
-        // 1. Notification permission for Android 13+ (API 33+)
+        // App open er somoy ONLY Notification permission saibe (Media/Camera open er somoy saibe nah)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS);
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST_CODE);
             }
-        }
-
-        // 2. Camera permission
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                permissionsNeeded.add(Manifest.permission.CAMERA);
-            }
-
-            // 3. Storage / Media permission
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                    permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES);
-                }
-            } else {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-                }
-            }
-        }
-
-        if (!permissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(this, permissionsNeeded.toArray(new String[0]), PERMISSION_REQUEST_CODE);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE || requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST_CODE) {
             for (int i = 0; i < permissions.length; i++) {
                 if (Manifest.permission.POST_NOTIFICATIONS.equals(permissions[i])) {
                     if (grantResults.length > i && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
@@ -664,6 +668,11 @@ public class MainActivity extends AppCompatActivity {
                         } catch (Exception ignored) {}
                     }
                 }
+            }
+        } else if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Media / Camera permission result when uploading a pic
+            if (uploadMessage != null) {
+                openFileChooser();
             }
         }
     }
