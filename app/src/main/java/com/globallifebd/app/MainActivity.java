@@ -89,13 +89,8 @@ public class MainActivity extends AppCompatActivity {
         targetUrl = getString(R.string.web_url);
 
         // Check if opened from a notification deep link
-        if (getIntent() != null) {
-            String deepLink = null;
-            if (getIntent().hasExtra("target_url")) {
-                deepLink = getIntent().getStringExtra("target_url");
-            } else if (getIntent().hasExtra("url")) {
-                deepLink = getIntent().getStringExtra("url");
-            }
+        if (getIntent() != null && getIntent().hasExtra("target_url")) {
+            String deepLink = getIntent().getStringExtra("target_url");
             if (deepLink != null && !deepLink.isEmpty()) {
                 targetUrl = deepLink;
             }
@@ -585,24 +580,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        if (intent != null) {
-            String deepLink = null;
-            if (intent.hasExtra("target_url")) {
-                deepLink = intent.getStringExtra("target_url");
-            } else if (intent.hasExtra("url")) {
-                deepLink = intent.getStringExtra("url");
-            }
-            if (deepLink != null && !deepLink.isEmpty() && webView != null) {
-                targetUrl = deepLink;
-                webView.loadUrl(deepLink);
-            }
-        }
     }
 
     @Override
