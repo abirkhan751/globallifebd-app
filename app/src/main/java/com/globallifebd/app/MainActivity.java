@@ -17,6 +17,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.view.View;
 import android.webkit.CookieManager;
@@ -34,7 +36,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -63,6 +67,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private LinearLayout offlineLayout;
+    private FrameLayout splashOverlay;
     private Button btnRetry;
 
     private ValueCallback<Uri[]> uploadMessage;
@@ -94,17 +99,46 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webView);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         offlineLayout = findViewById(R.id.offlineLayout);
+        splashOverlay = findViewById(R.id.splashOverlay);
         btnRetry = findViewById(R.id.btnRetry);
+
+        // Dynamically set version on splash overlay
+        try {
+            android.content.pm.PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            String version = pInfo.versionName;
+            TextView txtSplashVersion = findViewById(R.id.txtSplashVersion);
+            if (txtSplashVersion != null && version != null) {
+                String bnVersion = version
+                        .replace("0", "০")
+                        .replace("1", "১")
+                        .replace("2", "২")
+                        .replace("3", "৩")
+                        .replace("4", "৪")
+                        .replace("5", "৫")
+                        .replace("6", "৬")
+                        .replace("7", "৭")
+                        .replace("8", "৮")
+                        .replace("9", "৯");
+                txtSplashVersion.setText("ভার্সনঃ " + bnVersion);
+            }
+        } catch (Exception ignored) {}
 
         createNotificationChannel();
         initSwipeRefresh();
         initWebView();
         checkPermissions();
 
+        // Safety timeout to ensure splash doesn't get stuck indefinitely
+        new Handler(Looper.getMainLooper()).postDelayed(this::dismissSplash, 6000);
+
         btnRetry.setOnClickListener(v -> {
             if (isNetworkConnected()) {
                 offlineLayout.setVisibility(View.GONE);
                 webView.setVisibility(View.VISIBLE);
+                if (splashOverlay != null) {
+                    splashOverlay.setAlpha(1f);
+                    splashOverlay.setVisibility(View.VISIBLE);
+                }
                 webView.reload();
             } else {
                 Toast.makeText(this, R.string.offline_title, Toast.LENGTH_SHORT).show();
@@ -115,6 +149,15 @@ public class MainActivity extends AppCompatActivity {
             loadTargetPage();
         } else {
             webView.restoreState(savedInstanceState);
+        }
+    }
+
+    private void dismissSplash() {
+        if (splashOverlay != null && splashOverlay.getVisibility() == View.VISIBLE) {
+            splashOverlay.animate()
+                    .alpha(0f)
+                    .setDuration(250)
+                    .withEndAction(() -> splashOverlay.setVisibility(View.GONE));
         }
     }
 
@@ -349,6 +392,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onPageFinished(WebView view, String url) {
             swipeRefreshLayout.setRefreshing(false);
+            dismissSplash();
             super.onPageFinished(view, url);
 
             // Sync FCM Token with session cookies when page finishes loading
@@ -365,6 +409,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
             if (request.isForMainFrame()) {
                 swipeRefreshLayout.setRefreshing(false);
+                dismissSplash();
                 if (!isNetworkConnected()) {
                     offlineLayout.setVisibility(View.VISIBLE);
                     webView.setVisibility(View.GONE);
