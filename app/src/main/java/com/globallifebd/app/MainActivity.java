@@ -201,6 +201,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private boolean isSwipeRefreshAllowed = true;
+
+    public void setSwipeRefreshEnabled(final boolean enabled) {
+        runOnUiThread(() -> {
+            isSwipeRefreshAllowed = enabled;
+            if (swipeRefreshLayout != null) {
+                if (!enabled) {
+                    swipeRefreshLayout.setEnabled(false);
+                } else {
+                    swipeRefreshLayout.setEnabled(webView != null && webView.getScrollY() == 0);
+                }
+            }
+        });
+    }
+
     private void initSwipeRefresh() {
         swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary, R.color.colorAccent);
         swipeRefreshLayout.setOnRefreshListener(() -> {
@@ -213,9 +228,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        swipeRefreshLayout.setOnChildScrollUpCallback((parent, child) -> {
+            if (!isSwipeRefreshAllowed) {
+                return true;
+            }
+            return child.canScrollVertically(-1);
+        });
+
         webView.getViewTreeObserver().addOnScrollChangedListener(() -> {
-            if (webView.getScrollY() == 0) {
-                swipeRefreshLayout.setEnabled(true);
+            if (isSwipeRefreshAllowed) {
+                swipeRefreshLayout.setEnabled(webView.getScrollY() == 0);
             } else {
                 swipeRefreshLayout.setEnabled(false);
             }
@@ -237,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.4";
+        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.5";
         settings.setUserAgentString(customUserAgent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -261,8 +283,9 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new CustomWebViewClient());
         webView.setWebChromeClient(new CustomWebChromeClient());
 
-        // Native Notification Bridge
+        // Native Notification & App Bridge
         webView.addJavascriptInterface(new WebAppInterface(this), "AndroidNotification");
+        webView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
         webView.addJavascriptInterface(new FcmBridgeInterface(this), "AndroidFCM");
 
         // File download support
@@ -326,6 +349,11 @@ public class MainActivity extends AppCompatActivity {
                     notificationManager.notify((int) System.currentTimeMillis(), builder.build());
                 }
             } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public void setSwipeRefreshEnabled(boolean enabled) {
+            MainActivity.this.setSwipeRefreshEnabled(enabled);
         }
     }
 
@@ -402,6 +430,41 @@ public class MainActivity extends AppCompatActivity {
                 if (token != null && !token.isEmpty()) {
                     AppFirebaseMessagingService.syncTokenToServer(MainActivity.this, token);
                 }
+            } catch (Exception ignored) {}
+
+            // Inject scroll helper to prevent SwipeRefreshLayout from stealing scrolls inside sidebar or scrollable containers
+            try {
+                String js = "(function(){" +
+                        "if(window.__glpScrollHelper)return;window.__glpScrollHelper=true;" +
+                        "document.addEventListener('touchstart',function(e){" +
+                        "  var el=e.target;" +
+                        "  var isScrollable=false;" +
+                        "  while(el && el!==document.body && el!==document.documentElement){" +
+                        "    if(el.id==='sidebar'||el.id==='sidebar-menu-area'||(el.classList&&el.classList.contains('is-open'))){" +
+                        "      isScrollable=true;break;" +
+                        "    }" +
+                        "    var style=window.getComputedStyle(el);" +
+                        "    if((style.overflowY==='auto'||style.overflowY==='scroll')&&el.scrollHeight>el.clientHeight){" +
+                        "      isScrollable=true;break;" +
+                        "    }" +
+                        "    el=el.parentElement;" +
+                        "  }" +
+                        "  if(window.AndroidApp&&window.AndroidApp.setSwipeRefreshEnabled){" +
+                        "    window.AndroidApp.setSwipeRefreshEnabled(!isScrollable);" +
+                        "  }else if(window.AndroidNotification&&window.AndroidNotification.setSwipeRefreshEnabled){" +
+                        "    window.AndroidNotification.setSwipeRefreshEnabled(!isScrollable);" +
+                        "  }" +
+                        "},{passive:true});" +
+                        "document.addEventListener('touchend',function(e){" +
+                        "  var sb=document.getElementById('sidebar');" +
+                        "  var isOpen=sb&&(sb.classList.contains('is-open')||sb.style.transform==='translateX(0px)'||sb.style.transform==='translateX(0)');" +
+                        "  if(!isOpen && window.scrollY===0){" +
+                        "    if(window.AndroidApp&&window.AndroidApp.setSwipeRefreshEnabled){window.AndroidApp.setSwipeRefreshEnabled(true);}" +
+                        "    else if(window.AndroidNotification&&window.AndroidNotification.setSwipeRefreshEnabled){window.AndroidNotification.setSwipeRefreshEnabled(true);}" +
+                        "  }" +
+                        "},{passive:true});" +
+                        "})();";
+                view.evaluateJavascript(js, null);
             } catch (Exception ignored) {}
         }
 
