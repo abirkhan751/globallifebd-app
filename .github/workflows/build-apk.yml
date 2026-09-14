@@ -38,15 +38,16 @@ jobs:
       - name: Prepare APK for Download
         run: |
           mkdir -p final-apk
-          find app/build/outputs/apk/ -name "*.apk" -exec cp {} final-apk/GlobalLifeBD-App.apk \;
+          find app/build/outputs/apk/ -name "*.apk" -exec cp "{}" "final-apk/GLOBAL LIFE BD.apk" \;
+          cp "final-apk/GLOBAL LIFE BD.apk" "final-apk/GlobalLifeBD-App.apk"
           echo "APK build complete. File details:"
           ls -lh final-apk/
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: GlobalLifeBD-Android-App-APK
-          path: final-apk/GlobalLifeBD-App.apk
+          name: GLOBAL-LIFE-BD-APK
+          path: final-apk/
           retention-days: 30
 
       - name: Create or Update GitHub Release
@@ -54,10 +55,12 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: latest
-          name: "Global Life BD App (Latest)"
-          body: "Official Android Application for Global Life BD with direct Firebase Cloud Messaging (FCM) Push Notifications."
+          name: "GLOBAL LIFE BD (Latest)"
+          body: "Official Android Application for GLOBAL LIFE BD with direct Firebase Cloud Messaging (FCM) Push Notifications."
           draft: false
           prerelease: false
-          files: final-apk/GlobalLifeBD-App.apk
+          files: |
+            final-apk/GLOBAL LIFE BD.apk
+            final-apk/GlobalLifeBD-App.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
