@@ -129,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
         initSwipeRefresh();
         initWebView();
         checkPermissions();
+        startSplashLogoAnimation();
 
         // Safety timeout to ensure splash doesn't get stuck indefinitely
         new Handler(Looper.getMainLooper()).postDelayed(this::dismissSplash, 6000);
@@ -140,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 if (splashOverlay != null) {
                     splashOverlay.setAlpha(1f);
                     splashOverlay.setVisibility(View.VISIBLE);
+                    startSplashLogoAnimation();
                 }
                 webView.reload();
             } else {
@@ -154,12 +156,94 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void startSplashLogoAnimation() {
+        try {
+            ImageView imgSplashLogo = findViewById(R.id.imgSplashLogo);
+            TextView txtSplashTitle = findViewById(R.id.txtSplashTitle);
+            TextView txtSplashVersion = findViewById(R.id.txtSplashVersion);
+
+            if (imgSplashLogo != null) {
+                imgSplashLogo.setAlpha(0f);
+                imgSplashLogo.setScaleX(0.35f);
+                imgSplashLogo.setScaleY(0.35f);
+
+                imgSplashLogo.animate()
+                        .alpha(1.0f)
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
+                        .setDuration(750)
+                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.35f))
+                        .withEndAction(() -> startLogoBreathingLoop(imgSplashLogo))
+                        .start();
+            }
+
+            if (txtSplashTitle != null) {
+                txtSplashTitle.setAlpha(0f);
+                txtSplashTitle.setTranslationY(24f);
+                txtSplashTitle.animate()
+                        .alpha(1.0f)
+                        .translationY(0f)
+                        .setDuration(550)
+                        .setStartDelay(220)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                        .start();
+            }
+
+            if (txtSplashVersion != null) {
+                txtSplashVersion.setAlpha(0f);
+                txtSplashVersion.animate()
+                        .alpha(1.0f)
+                        .setDuration(450)
+                        .setStartDelay(350)
+                        .start();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void startLogoBreathingLoop(View logoView) {
+        if (logoView == null || isFinishing() || splashOverlay == null || splashOverlay.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        logoView.animate()
+                .scaleX(1.05f)
+                .scaleY(1.05f)
+                .setDuration(850)
+                .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                .withEndAction(() -> {
+                    if (splashOverlay != null && splashOverlay.getVisibility() == View.VISIBLE && !isFinishing()) {
+                        logoView.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .setDuration(850)
+                                .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                                .withEndAction(() -> startLogoBreathingLoop(logoView))
+                                .start();
+                    }
+                })
+                .start();
+    }
+
     private void dismissSplash() {
         if (splashOverlay != null && splashOverlay.getVisibility() == View.VISIBLE) {
+            ImageView imgSplashLogo = findViewById(R.id.imgSplashLogo);
+            if (imgSplashLogo != null) {
+                imgSplashLogo.animate().cancel();
+                imgSplashLogo.animate()
+                        .scaleX(1.12f)
+                        .scaleY(1.12f)
+                        .alpha(0f)
+                        .setDuration(280)
+                        .start();
+            }
             splashOverlay.animate()
                     .alpha(0f)
-                    .setDuration(250)
-                    .withEndAction(() -> splashOverlay.setVisibility(View.GONE));
+                    .setDuration(300)
+                    .withEndAction(() -> {
+                        splashOverlay.setVisibility(View.GONE);
+                        if (imgSplashLogo != null) {
+                            imgSplashLogo.animate().cancel();
+                        }
+                    });
         }
     }
 
@@ -261,7 +345,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.7";
+        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.8";
         settings.setUserAgentString(customUserAgent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
