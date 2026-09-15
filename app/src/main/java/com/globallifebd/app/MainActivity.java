@@ -77,11 +77,15 @@ public class MainActivity extends AppCompatActivity {
     private String cameraPhotoPath;
     private long backPressedTime = 0;
     private String targetUrl;
+    private long splashStartTime = 0;
+    private static final long MIN_SPLASH_DURATION = 1500;
+    private boolean isSplashDismissing = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        splashStartTime = System.currentTimeMillis();
         setContentView(R.layout.activity_main);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -225,7 +229,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void dismissSplash() {
-        if (splashOverlay != null && splashOverlay.getVisibility() == View.VISIBLE) {
+        if (splashOverlay == null || splashOverlay.getVisibility() != View.VISIBLE || isSplashDismissing) {
+            return;
+        }
+        long elapsedTime = System.currentTimeMillis() - splashStartTime;
+        if (elapsedTime < MIN_SPLASH_DURATION) {
+            long remaining = MIN_SPLASH_DURATION - elapsedTime;
+            new Handler(Looper.getMainLooper()).postDelayed(this::performDismissSplash, remaining);
+        } else {
+            performDismissSplash();
+        }
+    }
+
+    private void performDismissSplash() {
+        if (splashOverlay != null && splashOverlay.getVisibility() == View.VISIBLE && !isSplashDismissing) {
+            isSplashDismissing = true;
             ImageView imgSplashLogo = findViewById(R.id.imgSplashLogo);
             if (imgSplashLogo != null) {
                 imgSplashLogo.animate().cancel();
@@ -241,6 +259,7 @@ public class MainActivity extends AppCompatActivity {
                     .setDuration(300)
                     .withEndAction(() -> {
                         splashOverlay.setVisibility(View.GONE);
+                        isSplashDismissing = false;
                         if (imgSplashLogo != null) {
                             imgSplashLogo.animate().cancel();
                         }
