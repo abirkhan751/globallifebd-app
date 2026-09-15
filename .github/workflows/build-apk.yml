@@ -25,6 +25,7 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        continue-on-error: true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
