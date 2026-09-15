@@ -7,5 +7,6 @@
     <color name="colorWhite">#FFFFFF</color>
     <color name="colorTextDark">#1E293B</color>
     <color name="colorTextMuted">#64748B</color>
+    <color name="ic_launcher_background">#fb6600</color>
 </resources>
 

@@ -59,8 +59,8 @@ jobs:
           name: "GLOBAL LIFE BD v1.0.8"
           body: |
             ### GLOBAL LIFE BD v1.0.8 Official Release
-            - App Version: 1.0.8 (versionCode 9)
-            - Brand new high-definition circular 3D logo icon across all densities
+            - App Version: 1.0.8 (versionCode 10)
+            - Modern Android Adaptive Icons (API 26+) for crisp, un-shrunk home screen icons with brand orange bleed
             - Smooth spring entrance & breathing logo animation on app launch
             - Razor-sharp splash and offline screen branding
             - Single optimized upload image processing (0 duplicate webp files)
