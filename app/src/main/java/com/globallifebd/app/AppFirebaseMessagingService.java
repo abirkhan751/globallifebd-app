@@ -89,8 +89,8 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
             targetUrl = remoteMessage.getData().get("url");
         }
 
-        if (title == null || title.isEmpty()) {
-            title = getString(R.string.app_name);
+        if (title != null) {
+            title = title.trim();
         }
         if (body == null || body.isEmpty()) {
             body = "নতুন নোটিফিকেশন এসেছে";
@@ -123,7 +123,6 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_notification)
                 .setColor(ContextCompat.getColor(this, R.color.ic_launcher_background))
-                .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -132,6 +131,16 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setContentIntent(pendingIntent);
+
+        // Only set content title if a distinct custom title was provided
+        // (Prevents duplicate "GLOBAL LIFE BD" under the app header on automated notifications)
+        boolean hasCustomTitle = title != null
+                && !title.isEmpty()
+                && !title.equalsIgnoreCase(getString(R.string.app_name))
+                && !title.equalsIgnoreCase("GLOBAL LIFE BD");
+        if (hasCustomTitle) {
+            builder.setContentTitle(title);
+        }
 
         // Download and attach big picture image if available
         if (imageUrl != null && !imageUrl.isEmpty()) {
@@ -208,7 +217,7 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
                 conn.setConnectTimeout(12000);
                 conn.setReadTimeout(12000);
                 conn.setInstanceFollowRedirects(true);
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GlobalLifeBDApp/2.0.3");
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GlobalLifeBDApp/2.0.4");
                 conn.setRequestProperty("Accept", "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
                 conn.connect();
 

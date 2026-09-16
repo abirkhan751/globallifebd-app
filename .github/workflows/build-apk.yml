@@ -53,19 +53,19 @@ jobs:
           path: final-apk/
           retention-days: 30
 
-      - name: Create or Update GitHub Release v2.0.3
+      - name: Create or Update GitHub Release v2.0.4
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v2.0.3
-          name: "GLOBAL LIFE BD Version 2.0.3"
+          tag_name: v2.0.4
+          name: "GLOBAL LIFE BD Version 2.0.4"
           body: |
-            ### GLOBAL LIFE BD Version 2.0.3 Official Release
-            - App Version: Version 2.0.3 (versionCode 15)
-            - Push notification lock screen visibility and deep link support
-            - Global Life BD website logo small notification icon
-            - BigPicture banner & collapsed thumbnail support
-            - Seamless edge-to-edge Android Adaptive Icons with zero rings
+            ### GLOBAL LIFE BD Version 2.0.4 Official Release
+            - App Version: Version 2.0.4 (versionCode 18)
+            - Automated push notification title de-duplication
+            - Vendor order receive push notification support
+            - Pure white website logo small notification icon with orange background
+            - Lock screen wake-up on push arrival
           draft: false
           prerelease: false
           files: |
@@ -80,7 +80,7 @@ jobs:
         with:
           tag_name: latest
           name: "GLOBAL LIFE BD (Latest)"
-          body: "Official Android Application for GLOBAL LIFE BD Version 2.0.3."
+          body: "Official Android Application for GLOBAL LIFE BD Version 2.0.4."
           draft: false
           prerelease: false
           files: |
