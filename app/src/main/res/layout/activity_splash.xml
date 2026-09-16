@@ -2,6 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:background="@color/colorWhite">
 
     <!-- Center Section: Logo + Name + Version -->
@@ -10,6 +12,8 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:gravity="center"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="vertical">
 
         <ImageView
@@ -28,7 +32,7 @@
             android:layout_marginTop="16dp"
             android:fontFamily="sans-serif-medium"
             android:text="@string/app_name"
-            android:textColor="#5A6A85"
+            android:textColor="#334155"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -37,8 +41,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="ভার্সনঃ ১.০.১০"
-            android:textColor="#94A3B8"
+            android:text="ভার্সনঃ ১১"
+            android:textColor="#475569"
+            android:textStyle="bold"
             android:textSize="13sp" />
 
     </LinearLayout>

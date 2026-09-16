@@ -169,27 +169,27 @@ public class MainActivity extends AppCompatActivity {
 
             if (imgSplashLogo != null) {
                 imgSplashLogo.setAlpha(0f);
-                imgSplashLogo.setScaleX(0.35f);
-                imgSplashLogo.setScaleY(0.35f);
+                imgSplashLogo.setScaleX(0.5f);
+                imgSplashLogo.setScaleY(0.5f);
 
                 imgSplashLogo.animate()
                         .alpha(1.0f)
                         .scaleX(1.0f)
                         .scaleY(1.0f)
-                        .setDuration(750)
-                        .setInterpolator(new android.view.animation.OvershootInterpolator(1.35f))
+                        .setDuration(650)
+                        .setInterpolator(new android.view.animation.DecelerateInterpolator())
                         .withEndAction(() -> startLogoBreathingLoop(imgSplashLogo))
                         .start();
             }
 
             if (txtSplashTitle != null) {
                 txtSplashTitle.setAlpha(0f);
-                txtSplashTitle.setTranslationY(24f);
+                txtSplashTitle.setTranslationY(20f);
                 txtSplashTitle.animate()
                         .alpha(1.0f)
                         .translationY(0f)
-                        .setDuration(550)
-                        .setStartDelay(220)
+                        .setDuration(500)
+                        .setStartDelay(180)
                         .setInterpolator(new android.view.animation.DecelerateInterpolator())
                         .start();
             }
@@ -198,8 +198,8 @@ public class MainActivity extends AppCompatActivity {
                 txtSplashVersion.setAlpha(0f);
                 txtSplashVersion.animate()
                         .alpha(1.0f)
-                        .setDuration(450)
-                        .setStartDelay(350)
+                        .setDuration(400)
+                        .setStartDelay(280)
                         .start();
             }
         } catch (Exception ignored) {}
@@ -210,16 +210,16 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         logoView.animate()
-                .scaleX(1.05f)
-                .scaleY(1.05f)
-                .setDuration(850)
+                .scaleX(1.03f)
+                .scaleY(1.03f)
+                .setDuration(900)
                 .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction(() -> {
                     if (splashOverlay != null && splashOverlay.getVisibility() == View.VISIBLE && !isFinishing()) {
                         logoView.animate()
                                 .scaleX(1.0f)
                                 .scaleY(1.0f)
-                                .setDuration(850)
+                                .setDuration(900)
                                 .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
                                 .withEndAction(() -> startLogoBreathingLoop(logoView))
                                 .start();
@@ -248,10 +248,10 @@ public class MainActivity extends AppCompatActivity {
             if (imgSplashLogo != null) {
                 imgSplashLogo.animate().cancel();
                 imgSplashLogo.animate()
-                        .scaleX(1.12f)
-                        .scaleY(1.12f)
+                        .scaleX(1.0f)
+                        .scaleY(1.0f)
                         .alpha(0f)
-                        .setDuration(280)
+                        .setDuration(250)
                         .start();
             }
             splashOverlay.animate()
@@ -365,7 +365,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.10";
+        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/11";
         settings.setUserAgentString(customUserAgent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
