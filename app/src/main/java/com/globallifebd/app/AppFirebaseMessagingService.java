@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
+import android.os.PowerManager;
 import android.util.Log;
 import android.webkit.CookieManager;
 
@@ -104,6 +105,9 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
     private void displayNotification(String title, String body, String imageUrl, String targetUrl) {
         createNotificationChannel(this);
 
+        // Wake up device screen if off/locked (like WhatsApp)
+        wakeUpScreen(this);
+
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("target_url", targetUrl);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -122,8 +126,9 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setAutoCancel(true)
                 .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setContentIntent(pendingIntent);
@@ -150,6 +155,22 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private void wakeUpScreen(Context context) {
+        try {
+            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (pm != null && !pm.isInteractive()) {
+                PowerManager.WakeLock wakeLock = pm.newWakeLock(
+                        PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE,
+                        "GlobalLifeBD:NotificationWakeLock"
+                );
+                wakeLock.acquire(4000); // Screen will light up and stay on for 4 seconds
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to wake up screen: " + e.getMessage());
+        }
+    }
+
     public static void createNotificationChannel(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
@@ -161,6 +182,7 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
             channel.enableVibration(true);
             channel.enableLights(true);
             channel.setShowBadge(true);
+            channel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
             NotificationManager manager = context.getSystemService(NotificationManager.class);
             if (manager != null) {
