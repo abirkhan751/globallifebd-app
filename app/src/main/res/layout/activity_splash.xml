@@ -37,7 +37,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="ভার্সনঃ ১.০.৯"
+            android:text="ভার্সনঃ ১.০.১০"
             android:textColor="#94A3B8"
             android:textSize="13sp" />
 
