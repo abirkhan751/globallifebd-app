@@ -79,6 +79,12 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
             if (imageUrl == null || imageUrl.isEmpty()) {
                 imageUrl = remoteMessage.getData().get("image");
             }
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                imageUrl = remoteMessage.getData().get("picture");
+            }
+            if (imageUrl == null || imageUrl.isEmpty()) {
+                imageUrl = remoteMessage.getData().get("image_url");
+            }
             targetUrl = remoteMessage.getData().get("url");
         }
 
@@ -107,12 +113,12 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
             pendingIntentFlags |= PendingIntent.FLAG_IMMUTABLE;
         }
 
-        int notificationId = (title + ":" + body).hashCode();
+        int notificationId = (int) (System.currentTimeMillis() & 0xfffffff);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, notificationId, intent, pendingIntentFlags);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_notification)
-                .setColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                .setColor(ContextCompat.getColor(this, R.color.ic_launcher_background))
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
@@ -163,19 +169,54 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
     }
 
     private Bitmap downloadBitmap(String urlStr) {
-        try {
-            URL url = new URL(urlStr);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setDoInput(true);
-            conn.setConnectTimeout(8000);
-            conn.setReadTimeout(8000);
-            conn.connect();
-            InputStream input = conn.getInputStream();
-            return BitmapFactory.decodeStream(input);
-        } catch (Exception e) {
-            Log.w(TAG, "Failed to download notification image: " + e.getMessage());
+        if (urlStr == null || urlStr.trim().isEmpty()) {
             return null;
         }
+        try {
+            String currentUrl = urlStr.trim();
+            if (currentUrl.startsWith("http://globallifebd.com")) {
+                currentUrl = currentUrl.replace("http://globallifebd.com", "https://globallifebd.com");
+            }
+            int redirects = 0;
+            while (redirects < 5) {
+                URL url = new URL(currentUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setDoInput(true);
+                conn.setConnectTimeout(12000);
+                conn.setReadTimeout(12000);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GlobalLifeBDApp/12");
+                conn.setRequestProperty("Accept", "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
+                conn.connect();
+
+                int responseCode = conn.getResponseCode();
+                if (responseCode >= 300 && responseCode < 400) {
+                    String newLocation = conn.getHeaderField("Location");
+                    conn.disconnect();
+                    if (newLocation != null && !newLocation.isEmpty()) {
+                        if (!newLocation.startsWith("http")) {
+                            newLocation = new URL(url, newLocation).toString();
+                        }
+                        currentUrl = newLocation;
+                        redirects++;
+                        continue;
+                    }
+                }
+
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    try (InputStream input = conn.getInputStream()) {
+                        return BitmapFactory.decodeStream(input);
+                    }
+                } else {
+                    Log.w(TAG, "Image HTTP error: " + responseCode + " for URL: " + currentUrl);
+                    conn.disconnect();
+                    return null;
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to download notification image: " + e.getMessage());
+        }
+        return null;
     }
 
     /**
