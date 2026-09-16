@@ -32,19 +32,6 @@ jobs:
         with:
           gradle-version: '8.4'
 
-      - name: Generate Official Android Keystore
-        run: |
-          rm -f app/release.keystore
-          keytool -genkeypair -v \
-            -keystore app/release.keystore \
-            -alias globallifebd \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storetype PKCS12 \
-            -storepass globallife123 \
-            -keypass globallife123 \
-            -dname "CN=GlobalLifeBD, OU=App, O=GlobalLifeBD, L=Dhaka, ST=Dhaka, C=BD"
 
       - name: Build Android APK
         run: |
