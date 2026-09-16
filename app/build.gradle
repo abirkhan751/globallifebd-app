@@ -11,8 +11,8 @@ android {
         applicationId "com.globallifebd.app"
         minSdk 21
         targetSdk 34
-        versionCode 13
-        versionName "11"
+        versionCode 14
+        versionName "12"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
