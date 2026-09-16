@@ -161,6 +161,21 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent != null && intent.hasExtra("target_url")) {
+            String deepLink = intent.getStringExtra("target_url");
+            if (deepLink != null && !deepLink.isEmpty()) {
+                targetUrl = deepLink;
+                if (webView != null) {
+                    webView.loadUrl(deepLink);
+                }
+            }
+        }
+    }
+
     private void startSplashLogoAnimation() {
         try {
             ImageView imgSplashLogo = findViewById(R.id.imgSplashLogo);
