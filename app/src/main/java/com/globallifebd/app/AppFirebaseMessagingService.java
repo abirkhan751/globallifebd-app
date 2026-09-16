@@ -186,7 +186,7 @@ public class AppFirebaseMessagingService extends FirebaseMessagingService {
                 conn.setConnectTimeout(12000);
                 conn.setReadTimeout(12000);
                 conn.setInstanceFollowRedirects(true);
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GlobalLifeBDApp/12");
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 GlobalLifeBDApp/2.0.3");
                 conn.setRequestProperty("Accept", "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8");
                 conn.connect();
 
