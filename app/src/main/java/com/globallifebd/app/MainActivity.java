@@ -44,6 +44,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -52,8 +53,14 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -159,6 +166,57 @@ public class MainActivity extends AppCompatActivity {
         } else {
             webView.restoreState(savedInstanceState);
         }
+
+        checkForAppUpdate();
+    }
+
+    private void checkForAppUpdate() {
+        new Thread(() -> {
+            try {
+                URL url = new URL("https://globallifebd.com/api/app-version");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(6000);
+                conn.setReadTimeout(6000);
+                conn.setRequestProperty("User-Agent", "GlobalLifeBDApp/1.0.0");
+                conn.connect();
+
+                if (conn.getResponseCode() == 200) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+                    reader.close();
+
+                    JSONObject json = new JSONObject(response.toString());
+                    boolean forceUpdate = json.optBoolean("force_update", false);
+                    int minVersionCode = json.optInt("min_version_code", 0);
+                    int currentVersionCode = getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+
+                    if ((forceUpdate || currentVersionCode < minVersionCode) && minVersionCode > currentVersionCode) {
+                        String downloadUrl = json.optString("download_url", "https://globallifebd.com/download/app");
+                        String latestVersion = json.optString("latest_version", "");
+                        runOnUiThread(() -> showForceUpdateDialog(latestVersion, downloadUrl));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }).start();
+    }
+
+    private void showForceUpdateDialog(String newVersion, String downloadUrl) {
+        if (isFinishing()) return;
+        new AlertDialog.Builder(this)
+                .setTitle("নতুন আপডেট উপলব্ধ (v" + newVersion + ")")
+                .setMessage("আপনার অ্যাপটি পুরোনো ভার্সনে চলছে। ড্যাশবোর্ড ও সেবা সচল রাখতে এখনই নতুন ভার্সনে আপডেট করুন।")
+                .setCancelable(false)
+                .setPositiveButton("এখনই আপডেট করুন", (dialog, which) -> {
+                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
+                    startActivity(browserIntent);
+                    finish();
+                })
+                .show();
     }
 
     private void startSplashLogoAnimation() {
@@ -365,7 +423,7 @@ public class MainActivity extends AppCompatActivity {
         settings.setDisplayZoomControls(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
-        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/2.0.4";
+        String customUserAgent = settings.getUserAgentString() + " GlobalLifeBDApp/1.0.0";
         settings.setUserAgentString(customUserAgent);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
